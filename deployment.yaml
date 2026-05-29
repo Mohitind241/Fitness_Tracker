@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: fitness-app-deployment
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: fitness-app
+
+  template:
+
+    metadata:
+      labels:
+        app: fitness-app
+
+    spec:
+
+      containers:
+
+      - name: fitness-app-container
+
+        image: mohitdocker241/fitness:v1
+
+        ports:
+          - containerPort: 5000
+
+        envFrom:
+          - configMapRef:
+              name: fitness-app-config
+
+          - secretRef:
+              name: fitness-app-secret

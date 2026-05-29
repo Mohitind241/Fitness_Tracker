@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+
+metadata:
+  name: fitness-multi-pod
+
+spec:
+
+  containers:
+
+  - name: fitness-app
+
+    image: fitness-app:v1
+
+    ports:
+    - containerPort: 5000
+
+  - name: nginx
+
+    image: nginx
+
+    ports:
+    - containerPort: 80
