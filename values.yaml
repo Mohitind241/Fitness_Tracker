@@ -1,0 +1,12 @@
+replicaCount: 2
+
+image:
+  repository: mohitdocker241/fitness
+  pullPolicy: IfNotPresent
+  tag: v1
+
+service:
+  type: NodePort
+  port: 80
+
+containerPort: 5000

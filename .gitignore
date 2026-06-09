@@ -1,0 +1,39 @@
+node_modules/
+.env
+.env.local
+
+# Logs
+*.log
+logs/
+
+# Docker
+.dockerignore
+
+# Helm
+*.tgz
+helm/*/charts/*.tgz
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# AI Agent output files
+ai-agent/health_report_*.json
+ai-agent/fix_*.sh
+
+# Scripts output
+scripts/image_promotion_*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

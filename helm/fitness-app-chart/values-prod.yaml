@@ -1,0 +1,25 @@
+# Production environment overrides
+replicaCount: 3
+
+image:
+  tag: "v1"    # CI pipeline updates this automatically
+
+config:
+  NODE_ENV: "production"
+  DD_ENV: "production"
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "200m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+mongodb:
+  storageSize: "10Gi"

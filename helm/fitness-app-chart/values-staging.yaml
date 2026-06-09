@@ -1,0 +1,17 @@
+# Staging environment overrides
+replicaCount: 2
+
+image:
+  tag: "v1"
+
+config:
+  NODE_ENV: "staging"
+  DD_ENV: "staging"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+
+mongodb:
+  storageSize: "5Gi"

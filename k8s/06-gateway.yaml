@@ -1,0 +1,69 @@
+# ─────────────────────────────────────────────────────────────
+# Kubernetes Gateway API - Fitness Tracker
+# Install Gateway CRDs first:
+#   kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml
+# Then install AWS Load Balancer Controller as GatewayClass provider.
+# ─────────────────────────────────────────────────────────────
+
+# 1. GatewayClass - tells Kubernetes which controller manages gateways
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: fitness-gateway-class
+spec:
+  controllerName: eks.amazonaws.com/alb     # AWS ALB Gateway controller
+---
+
+# 2. Gateway - the actual load balancer entry point
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: fitness-gateway
+  namespace: fitness-app
+  annotations:
+    # AWS ALB annotations (free tier compatible)
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+spec:
+  gatewayClassName: fitness-gateway-class
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+
+# 3. HTTPRoute - routing rules from gateway to app service
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: fitness-app-route
+  namespace: fitness-app
+  labels:
+    app: fitness-tracker
+spec:
+  parentRefs:
+    - name: fitness-gateway
+      namespace: fitness-app
+  hostnames:
+    - "fitness.example.com"    # Replace with your actual domain or ALB DNS
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: fitness-app-service
+          port: 80
+          weight: 100
+    # Health check route
+    - matches:
+        - path:
+            type: Exact
+            value: /health
+      backendRefs:
+        - name: fitness-app-service
+          port: 80

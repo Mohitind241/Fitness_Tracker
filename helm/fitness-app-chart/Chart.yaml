@@ -1,0 +1,14 @@
+apiVersion: v2
+name: fitness-app-chart
+description: Helm chart for the Fitness Tracker cloud-native application
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - fitness
+  - tracker
+  - nodejs
+  - mongodb
+maintainers:
+  - name: DevOps Team
+    email: devops@fitness-tracker.com

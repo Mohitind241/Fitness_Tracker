@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: fitness-project
+  namespace: argocd
+spec:
+  description: "Fitness Tracker Enterprise DevOps Project"
+
+  # Allowed source repos
+  sourceRepos:
+    - https://github.com/Mohitind241/Fitness_Tracker.git
+
+  # Allowed destination clusters and namespaces
+  destinations:
+    - namespace: fitness-app
+      server: https://kubernetes.default.svc
+    - namespace: fitness-staging
+      server: https://kubernetes.default.svc
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+
+  # Allowed cluster-scoped resources
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: gateway.networking.k8s.io
+      kind: GatewayClass
+
+  # Allowed namespace-scoped resources
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  # Roles
+  roles:
+    - name: developer
+      description: Developer read-only access
+      policies:
+        - p, proj:fitness-project:developer, applications, get, fitness-project/*, allow
+        - p, proj:fitness-project:developer, applications, sync, fitness-project/*, allow

@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fitness-tracker-prod
+  namespace: argocd
+  labels:
+    app: fitness-tracker
+    environment: production
+  # Auto-delete child resources when this Application is deleted
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # The ArgoCD project this app belongs to
+  project: default
+
+  # Source: your GitHub repo with the Helm chart
+  source:
+    repoURL: https://github.com/Mohitind241/Fitness_Tracker.git
+    targetRevision: main
+    path: helm/fitness-app-chart
+    helm:
+      valueFiles:
+        - values.yaml
+        - values-prod.yaml
+
+  # Destination: EKS cluster
+  destination:
+    server: https://kubernetes.default.svc   # In-cluster (replace with EKS API URL for remote)
+    namespace: fitness-app
+
+  # Sync policy: automatic GitOps with self-healing
+  syncPolicy:
+    automated:
+      prune: true        # Delete resources removed from Git
+      selfHeal: true     # Revert manual changes in the cluster
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Health assessment rules
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas   # Allow HPA to manage replicas

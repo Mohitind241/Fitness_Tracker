@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: fitness-app-service
+
+spec:
+
+  selector:
+    app: fitness-app
+
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 5000
+    nodePort: 30051
+
+  type: NodePort

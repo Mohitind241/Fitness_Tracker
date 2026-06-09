@@ -1,0 +1,12 @@
+# ──────────────────────────────────────────────────────
+# Kubernetes Manifests - Fitness Tracker Application
+# All resources in one file (apply with: kubectl apply -f k8s/)
+# ──────────────────────────────────────────────────────
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fitness-app
+  labels:
+    app: fitness-tracker
+    environment: production

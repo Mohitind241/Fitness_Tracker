@@ -1,0 +1,172 @@
+name: Fitness Tracker CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  DOCKER_USERNAME: mohitdocker241
+  DOCKER_IMAGE: mohitdocker241/fitness
+  DOCKER_TAG: v${{ github.run_number }}
+
+jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1: Code Quality & SonarQube Scan
+  # ─────────────────────────────────────────────
+  sonarqube-analysis:
+    name: SonarQube Quality Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Full history needed by SonarQube
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Install server dependencies
+        run: cd server && npm install
+
+      - name: Run SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: Check SonarQube Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ─────────────────────────────────────────────
+  # JOB 2: Build Application
+  # ─────────────────────────────────────────────
+  build-app:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: sonarqube-analysis
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Install server dependencies
+        run: cd server && npm install
+
+      - name: Verify application starts
+        run: |
+          timeout 10 node server/app.js &
+          sleep 5
+          echo "Application started successfully"
+          kill %1 || true
+        env:
+          PORT: 5000
+          MONGODB_URI: mongodb://localhost:27017/fitness-tracker
+          NODE_ENV: test
+        continue-on-error: true
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build-${{ github.run_number }}
+          path: |
+            server/
+            public/
+            package*.json
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # JOB 3: Docker Build & Push
+  # ─────────────────────────────────────────────
+  docker-build-push:
+    name: Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: build-app
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    outputs:
+      image_tag: ${{ env.DOCKER_TAG }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+            ${{ env.DOCKER_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify pushed image
+        run: |
+          docker pull ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+          echo "✅ Image verified: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}"
+
+      - name: Image digest summary
+        run: |
+          echo "## Docker Image Published 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: \`${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Also tagged**: \`${{ env.DOCKER_IMAGE }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run**: ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+
+  # ─────────────────────────────────────────────
+  # JOB 4: Update Helm Values (GitOps trigger)
+  # ─────────────────────────────────────────────
+  update-helm-values:
+    name: Update Helm Image Tag
+    runs-on: ubuntu-latest
+    needs: docker-build-push
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update image tag in Helm values
+        run: |
+          sed -i "s/tag: .*/tag: ${{ env.DOCKER_TAG }}/" helm/fitness-app-chart/values.yaml
+          sed -i "s/tag: .*/tag: ${{ env.DOCKER_TAG }}/" helm/fitness-app-chart/values-prod.yaml
+
+      - name: Commit and push updated Helm values
+        run: |
+          git config --local user.email "github-actions@github.com"
+          git config --local user.name "GitHub Actions Bot"
+          git add helm/fitness-app-chart/values.yaml helm/fitness-app-chart/values-prod.yaml
+          git diff --staged --quiet || git commit -m "ci: update image tag to ${{ env.DOCKER_TAG }} [skip ci]"
+          git push

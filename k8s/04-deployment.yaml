@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fitness-app-deployment
+  namespace: fitness-app
+  labels:
+    app: fitness-tracker
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fitness-tracker
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: fitness-tracker
+        version: v1
+      annotations:
+        # Datadog APM annotations
+        ad.datadoghq.com/fitness-app.logs: '[{"source":"nodejs","service":"fitness-tracker"}]'
+    spec:
+      containers:
+        - name: fitness-app
+          image: mohitdocker241/fitness:v1
+          ports:
+            - containerPort: 5000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: fitness-app-config
+            - secretRef:
+                name: fitness-app-secret
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            failureThreshold: 3
+      imagePullPolicy: Always

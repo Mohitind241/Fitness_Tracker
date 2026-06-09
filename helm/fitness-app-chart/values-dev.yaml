@@ -1,0 +1,23 @@
+# Development environment overrides
+replicaCount: 1
+
+image:
+  tag: "latest"
+
+config:
+  NODE_ENV: "development"
+  DD_ENV: "development"
+
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "50m"
+  limits:
+    memory: "128Mi"
+    cpu: "150m"
+
+autoscaling:
+  enabled: false
+
+mongodb:
+  storageSize: "2Gi"

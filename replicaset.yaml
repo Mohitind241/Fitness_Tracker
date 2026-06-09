@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+
+metadata:
+  name: fitness-app-rs
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: fitness-app-rs
+
+  template:
+
+    metadata:
+      labels:
+        app: fitness-app-rs
+
+    spec:
+
+      containers:
+
+      - name: fitness-app-container
+
+        image: mohitdocker241/fitness-app:v1
+
+        ports:
+        - containerPort: 5000

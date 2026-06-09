@@ -1,0 +1,87 @@
+# ─────────────────────────────────────────────
+# Default values (overridden by values-dev/staging/prod.yaml)
+# ─────────────────────────────────────────────
+
+replicaCount: 2
+
+image:
+  repository: mohitdocker241/fitness
+  pullPolicy: IfNotPresent
+  tag: "v1"
+
+nameOverride: ""
+fullnameOverride: "fitness-app"
+
+namespace: fitness-app
+
+# ─── App Service ────────────────────────────
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 5000
+
+# ─── Ingress / Gateway ──────────────────────
+ingress:
+  enabled: false
+  className: "nginx"
+  host: "fitness.example.com"
+  path: "/"
+  pathType: Prefix
+
+# ─── Resource Limits ────────────────────────
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "256Mi"
+    cpu: "250m"
+
+# ─── HPA ────────────────────────────────────
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+# ─── Config (injected as ConfigMap) ─────────
+config:
+  NODE_ENV: production
+  PORT: "5000"
+  HOST: "0.0.0.0"
+  MONGODB_URI: "mongodb://mongodb-service:27017/fitness-tracker"
+  DD_SERVICE: "fitness-tracker"
+  DD_ENV: "production"
+  DD_VERSION: "1.0.0"
+
+# ─── Secrets ────────────────────────────────
+secrets:
+  DB_User: "YWRtaW4="          # admin
+  DB_Password: "UGFzc3dvcmQxMjM="  # Password123
+  DD_API_KEY: "cGxhY2Vob2xkZXI="  # placeholder - override in CI
+
+# ─── MongoDB ────────────────────────────────
+mongodb:
+  enabled: true
+  image: "mongo:7-jammy"
+  replicas: 1
+  storageClass: "gp2"
+  storageSize: "5Gi"
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+# ─── Health Probes ───────────────────────────
+probes:
+  liveness:
+    path: "/"
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readiness:
+    path: "/"
+    initialDelaySeconds: 20
+    periodSeconds: 5
