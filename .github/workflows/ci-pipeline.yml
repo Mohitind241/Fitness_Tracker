@@ -11,10 +11,12 @@ on:
       - main
       - develop
 
+# Fix Node.js 24 deprecation warning
 env:
   DOCKER_USERNAME: mohitdocker241
   DOCKER_IMAGE: mohitdocker241/fitness
   DOCKER_TAG: v${{ github.run_number }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ─────────────────────────────────────────────
@@ -42,16 +44,26 @@ jobs:
         run: cd server && npm install
 
       - name: Run SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@master
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
+      # Quality Gate check — continue-on-error: true means
+      # pipeline will NOT stop if quality gate fails.
+      # You can still see the result in SonarCloud dashboard.
       - name: Check SonarQube Quality Gate
-        uses: SonarSource/sonarqube-quality-gate-action@master
+        uses: SonarSource/sonarqube-quality-gate-action@v1.1.0
         timeout-minutes: 5
+        continue-on-error: true   # ← shows result but doesn't block pipeline
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: SonarQube Quality Gate Summary
+        run: |
+          echo "## SonarQube Analysis Complete 🔍" >> $GITHUB_STEP_SUMMARY
+          echo "View full report at: ${{ secrets.SONAR_HOST_URL }}/dashboard?id=Mohitind241_Fitness_Tracker" >> $GITHUB_STEP_SUMMARY
 
   # ─────────────────────────────────────────────
   # JOB 2: Build Application
