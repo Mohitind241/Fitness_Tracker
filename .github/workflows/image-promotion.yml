@@ -1,0 +1,69 @@
+name: Docker Image Promotion
+
+on:
+  # Run manually from GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: 'Source image tag to promote FROM'
+        required: true
+        default: 'v1'
+      target_tag:
+        description: 'Target image tag to promote TO'
+        required: true
+        default: 'v2-staging'
+
+env:
+  DOCKER_IMAGE: mohitdocker241/fitness
+
+jobs:
+  promote-image:
+    name: Promote Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Pull source image
+        run: |
+          echo "📥 Pulling source image..."
+          docker pull ${{ env.DOCKER_IMAGE }}:${{ github.event.inputs.source_tag }}
+          echo "✅ Pulled: ${{ env.DOCKER_IMAGE }}:${{ github.event.inputs.source_tag }}"
+
+      - name: Tag image
+        run: |
+          echo "🏷️ Tagging image..."
+          docker tag \
+            ${{ env.DOCKER_IMAGE }}:${{ github.event.inputs.source_tag }} \
+            ${{ env.DOCKER_IMAGE }}:${{ github.event.inputs.target_tag }}
+          echo "✅ Tagged as: ${{ env.DOCKER_IMAGE }}:${{ github.event.inputs.target_tag }}"
+
+      - name: Push promoted image
+        run: |
+          echo "📤 Pushing promoted image..."
+          docker push ${{ env.DOCKER_IMAGE }}:${{ github.event.inputs.target_tag }}
+          echo "✅ Pushed: ${{ env.DOCKER_IMAGE }}:${{ github.event.inputs.target_tag }}"
+
+      - name: Validate promoted image
+        run: |
+          echo "🔍 Validating pushed image..."
+          docker pull ${{ env.DOCKER_IMAGE }}:${{ github.event.inputs.target_tag }}
+          docker inspect ${{ env.DOCKER_IMAGE }}:${{ github.event.inputs.target_tag }} | grep "Id"
+          echo "✅ Validation passed!"
+
+      - name: Promotion Summary
+        run: |
+          echo "## 🚀 Image Promotion Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--|--|" >> $GITHUB_STEP_SUMMARY
+          echo "| **From** | \`${{ env.DOCKER_IMAGE }}:${{ github.event.inputs.source_tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **To** | \`${{ env.DOCKER_IMAGE }}:${{ github.event.inputs.target_tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Docker Hub** | [View Tags](https://hub.docker.com/r/${{ env.DOCKER_IMAGE }}/tags) |" >> $GITHUB_STEP_SUMMARY
