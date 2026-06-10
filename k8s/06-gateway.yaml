@@ -1,32 +1,24 @@
 # ─────────────────────────────────────────────────────────────
 # Kubernetes Gateway API - Fitness Tracker
-# Install Gateway CRDs first:
-#   kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml
-# Then install AWS Load Balancer Controller as GatewayClass provider.
+# Uses NGINX Gateway Fabric (open source, works on EKS)
 # ─────────────────────────────────────────────────────────────
 
-# 1. GatewayClass - tells Kubernetes which controller manages gateways
+# 1. GatewayClass — tells Kubernetes which controller handles gateways
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:
-  name: fitness-gateway-class
+  name: nginx
 spec:
-  controllerName: eks.amazonaws.com/alb     # AWS ALB Gateway controller
+  controllerName: gateway.nginx.org/nginx-gateway-controller
 ---
-
-# 2. Gateway - the actual load balancer entry point
+# 2. Gateway — the entry point for external traffic
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: fitness-gateway
   namespace: fitness-app
-  annotations:
-    # AWS ALB annotations (free tier compatible)
-    service.beta.kubernetes.io/aws-load-balancer-type: "external"
-    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
 spec:
-  gatewayClassName: fitness-gateway-class
+  gatewayClassName: nginx
   listeners:
     - name: http
       protocol: HTTP
@@ -35,8 +27,7 @@ spec:
         namespaces:
           from: Same
 ---
-
-# 3. HTTPRoute - routing rules from gateway to app service
+# 3. HTTPRoute — routing rule: all traffic → fitness-app-service
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -48,22 +39,11 @@ spec:
   parentRefs:
     - name: fitness-gateway
       namespace: fitness-app
-  hostnames:
-    - "fitness.example.com"    # Replace with your actual domain or ALB DNS
   rules:
     - matches:
         - path:
             type: PathPrefix
             value: /
-      backendRefs:
-        - name: fitness-app-service
-          port: 80
-          weight: 100
-    # Health check route
-    - matches:
-        - path:
-            type: Exact
-            value: /health
       backendRefs:
         - name: fitness-app-service
           port: 80
