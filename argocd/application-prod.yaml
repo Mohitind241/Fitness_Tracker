@@ -16,7 +16,7 @@ spec:
   # Source: your GitHub repo with the Helm chart
   source:
     repoURL: https://github.com/Mohitind241/Fitness_Tracker.git
-    targetRevision: main
+    targetRevision: develop
     path: helm/fitness-app-chart
     helm:
       valueFiles:
