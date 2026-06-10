@@ -1,22 +1,9 @@
 {{- if .Values.mongodb.enabled }}
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mongodb-pvc
-  namespace: {{ .Values.namespace }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: {{ .Values.mongodb.storageClass }}
-  resources:
-    requests:
-      storage: {{ .Values.mongodb.storageSize }}
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mongodb
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app: mongodb
 spec:
@@ -41,14 +28,13 @@ spec:
             {{- toYaml .Values.mongodb.resources | nindent 12 }}
       volumes:
         - name: mongodb-storage
-          persistentVolumeClaim:
-            claimName: mongodb-pvc
+          emptyDir: {}    # No PVC needed - works without EBS CSI driver
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: mongodb-service
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
 spec:
   selector:
     app: mongodb

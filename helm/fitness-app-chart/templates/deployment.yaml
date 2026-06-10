@@ -2,14 +2,16 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fitness-app-deployment
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "fitness-app-chart.labels" . | nindent 4 }}
+    app: fitness-tracker
+    version: "{{ .Values.image.tag }}"
+    app.kubernetes.io/managed-by: Helm
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "fitness-app-chart.selectorLabels" . | nindent 6 }}
+      app: fitness-tracker          # Simple label — matches existing pods
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,7 +20,8 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "fitness-app-chart.selectorLabels" . | nindent 8 }}
+        app: fitness-tracker
+        version: "{{ .Values.image.tag }}"
       annotations:
         ad.datadoghq.com/fitness-app.logs: '[{"source":"nodejs","service":"fitness-tracker"}]'
     spec:
