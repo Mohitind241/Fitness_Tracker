@@ -7,7 +7,7 @@ metadata:
     app: fitness-tracker
     version: v1
 spec:
-  replicas: 2
+  replicas: 1              # 1 replica for free tier t2.micro (1GB RAM)
   selector:
     matchLabels:
       app: fitness-tracker
@@ -21,9 +21,6 @@ spec:
       labels:
         app: fitness-tracker
         version: v1
-      annotations:
-        # Datadog APM annotations
-        ad.datadoghq.com/fitness-app.logs: '[{"source":"nodejs","service":"fitness-tracker"}]'
     spec:
       containers:
         - name: fitness-app
@@ -38,11 +35,11 @@ spec:
                 name: fitness-app-secret
           resources:
             requests:
-              memory: "128Mi"
-              cpu: "100m"
+              memory: "64Mi"
+              cpu: "50m"
             limits:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "128Mi"
+              cpu: "200m"
           livenessProbe:
             httpGet:
               path: /
@@ -57,4 +54,3 @@ spec:
             initialDelaySeconds: 20
             periodSeconds: 5
             failureThreshold: 3
-      imagePullPolicy: Always

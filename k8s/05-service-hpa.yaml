@@ -13,30 +13,5 @@ spec:
       protocol: TCP
       port: 80
       targetPort: 5000
-  type: ClusterIP
----
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: fitness-app-hpa
-  namespace: fitness-app
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: fitness-app-deployment
-  minReplicas: 2
-  maxReplicas: 5
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 80
+      nodePort: 30500      # Access app at EC2_PUBLIC_IP:30500
+  type: NodePort           # Works on free tier (no LoadBalancer needed)
