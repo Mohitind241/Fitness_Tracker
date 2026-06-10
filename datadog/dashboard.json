@@ -1,442 +1,347 @@
 {
   "title": "Fitness Tracker — Production Observability",
-  "description": "Production-level operational visibility: Kubernetes cluster health, pods, containers, application metrics, logs, traces, performance and reliability indicators.",
-  "widgets": [
-    {
-      "id": 1000,
-      "definition": {
-        "type": "group",
-        "title": "🏥 Kubernetes Cluster Health",
-        "layout_type": "ordered",
-        "widgets": [
-          {
-            "id": 1001,
-            "definition": {
-              "type": "query_value",
-              "title": "Nodes Ready",
-              "requests": [
-                {
-                  "q": "sum:kubernetes_state.node.status{*,status:ready}",
-                  "aggregator": "last"
-                }
-              ],
-              "precision": 0,
-              "autoscale": true
-            }
-          },
-          {
-            "id": 1002,
-            "definition": {
-              "type": "query_value",
-              "title": "Running Pods",
-              "requests": [
-                {
-                  "q": "sum:kubernetes_state.pod.status_phase{phase:running}",
-                  "aggregator": "last"
-                }
-              ],
-              "precision": 0,
-              "autoscale": true
-            }
-          },
-          {
-            "id": 1003,
-            "definition": {
-              "type": "query_value",
-              "title": "Pending Pods",
-              "requests": [
-                {
-                  "q": "sum:kubernetes_state.pod.status_phase{phase:pending}",
-                  "aggregator": "last"
-                }
-              ],
-              "precision": 0,
-              "autoscale": true,
-              "custom_links": []
-            }
-          },
-          {
-            "id": 1004,
-            "definition": {
-              "type": "query_value",
-              "title": "Failed Pods",
-              "requests": [
-                {
-                  "q": "sum:kubernetes_state.pod.status_phase{phase:failed}",
-                  "aggregator": "last"
-                }
-              ],
-              "precision": 0,
-              "autoscale": true
-            }
-          }
-        ]
-      }
-    },
-    {
-      "id": 2000,
-      "definition": {
-        "type": "group",
-        "title": "📊 Node Resource Usage",
-        "layout_type": "ordered",
-        "widgets": [
-          {
-            "id": 2001,
-            "definition": {
-              "type": "timeseries",
-              "title": "Node CPU Usage (%)",
-              "requests": [
-                {
-                  "q": "avg:system.cpu.user{*} by {host}",
-                  "display_type": "line",
-                  "style": {
-                    "palette": "dog_classic",
-                    "line_type": "solid",
-                    "line_width": "normal"
-                  }
-                }
-              ],
-              "yaxis": {
-                "min": "0",
-                "max": "100"
-              }
-            }
-          },
-          {
-            "id": 2002,
-            "definition": {
-              "type": "timeseries",
-              "title": "Node Memory Usage (bytes)",
-              "requests": [
-                {
-                  "q": "avg:system.mem.used{*} by {host}",
-                  "display_type": "area",
-                  "style": {
-                    "palette": "purple",
-                    "line_type": "solid",
-                    "line_width": "normal"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "id": 2003,
-            "definition": {
-              "type": "timeseries",
-              "title": "Disk I/O (bytes/sec)",
-              "requests": [
-                {
-                  "q": "avg:system.io.rkb_s{*} by {host}",
-                  "display_type": "line"
-                }
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "id": 3000,
-      "definition": {
-        "type": "group",
-        "title": "🚀 Pod & Container Metrics (fitness-app namespace)",
-        "layout_type": "ordered",
-        "widgets": [
-          {
-            "id": 3001,
-            "definition": {
-              "type": "timeseries",
-              "title": "Pod CPU Usage — fitness-app",
-              "requests": [
-                {
-                  "q": "sum:kubernetes.cpu.usage.total{kube_namespace:fitness-app} by {pod_name}",
-                  "display_type": "line",
-                  "style": {
-                    "palette": "cool",
-                    "line_type": "solid",
-                    "line_width": "normal"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "id": 3002,
-            "definition": {
-              "type": "timeseries",
-              "title": "Pod Memory Usage — fitness-app",
-              "requests": [
-                {
-                  "q": "sum:kubernetes.memory.usage{kube_namespace:fitness-app} by {pod_name}",
-                  "display_type": "area",
-                  "style": {
-                    "palette": "warm",
-                    "line_type": "solid",
-                    "line_width": "normal"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "id": 3003,
-            "definition": {
-              "type": "timeseries",
-              "title": "Container Restarts — fitness-app",
-              "requests": [
-                {
-                  "q": "sum:kubernetes_state.container.restarts{kube_namespace:fitness-app} by {pod_name}",
-                  "display_type": "bars",
-                  "style": {
-                    "palette": "red"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "id": 3004,
-            "definition": {
-              "type": "timeseries",
-              "title": "Network Bytes Received — fitness-app pods",
-              "requests": [
-                {
-                  "q": "sum:kubernetes.network.rx_bytes{kube_namespace:fitness-app} by {pod_name}",
-                  "display_type": "line"
-                }
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "id": 4000,
-      "definition": {
-        "type": "group",
-        "title": "🎯 Application Metrics",
-        "layout_type": "ordered",
-        "widgets": [
-          {
-            "id": 4001,
-            "definition": {
-              "type": "timeseries",
-              "title": "HPA Replicas — fitness-app",
-              "requests": [
-                {
-                  "q": "sum:kubernetes_state.hpa.current_replicas{kube_namespace:fitness-app}",
-                  "display_type": "line",
-                  "style": {
-                    "palette": "green"
-                  }
-                },
-                {
-                  "q": "sum:kubernetes_state.hpa.desired_replicas{kube_namespace:fitness-app}",
-                  "display_type": "line",
-                  "style": {
-                    "palette": "orange"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "id": 4002,
-            "definition": {
-              "type": "query_value",
-              "title": "Desired Replicas (HPA)",
-              "requests": [
-                {
-                  "q": "sum:kubernetes_state.hpa.desired_replicas{kube_namespace:fitness-app}",
-                  "aggregator": "last"
-                }
-              ],
-              "precision": 0
-            }
-          },
-          {
-            "id": 4003,
-            "definition": {
-              "type": "timeseries",
-              "title": "Deployment Available Replicas",
-              "requests": [
-                {
-                  "q": "sum:kubernetes_state.deployment.replicas_available{kube_namespace:fitness-app} by {deployment}",
-                  "display_type": "bars",
-                  "style": {
-                    "palette": "cool"
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "id": 5000,
-      "definition": {
-        "type": "group",
-        "title": "📋 Kubernetes State Overview",
-        "layout_type": "ordered",
-        "widgets": [
-          {
-            "id": 5001,
-            "definition": {
-              "type": "toplist",
-              "title": "Top CPU Consuming Pods",
-              "requests": [
-                {
-                  "q": "top(sum:kubernetes.cpu.usage.total{kube_namespace:fitness-app} by {pod_name}, 10, 'mean', 'desc')"
-                }
-              ]
-            }
-          },
-          {
-            "id": 5002,
-            "definition": {
-              "type": "toplist",
-              "title": "Top Memory Consuming Pods",
-              "requests": [
-                {
-                  "q": "top(sum:kubernetes.memory.usage{kube_namespace:fitness-app} by {pod_name}, 10, 'mean', 'desc')"
-                }
-              ]
-            }
-          },
-          {
-            "id": 5003,
-            "definition": {
-              "type": "check_status",
-              "title": "Node Status",
-              "check": "kubernetes_state.node.ready",
-              "grouping": "cluster",
-              "group_by": [],
-              "tags": ["*"]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "id": 6000,
-      "definition": {
-        "type": "group",
-        "title": "🔧 Performance & Reliability Indicators",
-        "layout_type": "ordered",
-        "widgets": [
-          {
-            "id": 6001,
-            "definition": {
-              "type": "timeseries",
-              "title": "CPU Throttling — fitness-app containers",
-              "requests": [
-                {
-                  "q": "sum:kubernetes.cpu.cfs.throttled_periods{kube_namespace:fitness-app} by {container_name}",
-                  "display_type": "bars",
-                  "style": {
-                    "palette": "red"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "id": 6002,
-            "definition": {
-              "type": "timeseries",
-              "title": "OOMKilled Events",
-              "requests": [
-                {
-                  "q": "sum:kubernetes_state.container.status_report.count.oomkilled{kube_namespace:fitness-app}",
-                  "display_type": "bars",
-                  "style": {
-                    "palette": "red"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "id": 6003,
-            "definition": {
-              "type": "timeseries",
-              "title": "System Load (15 min avg)",
-              "requests": [
-                {
-                  "q": "avg:system.load.15{*} by {host}",
-                  "display_type": "line",
-                  "style": {
-                    "palette": "orange"
-                  }
-                }
-              ]
-            }
-          },
-          {
-            "id": 6004,
-            "definition": {
-              "type": "timeseries",
-              "title": "Disk Usage",
-              "requests": [
-                {
-                  "q": "avg:system.disk.in_use{*} by {host}",
-                  "display_type": "area",
-                  "style": {
-                    "palette": "warm"
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "id": 7000,
-      "definition": {
-        "type": "group",
-        "title": "📝 Logs Stream",
-        "layout_type": "ordered",
-        "widgets": [
-          {
-            "id": 7001,
-            "definition": {
-              "type": "log_stream",
-              "title": "Live Logs — fitness-app",
-              "query": "kube_namespace:fitness-app",
-              "columns": ["host", "service", "status"],
-              "indexes": [],
-              "show_date_column": true,
-              "show_message_column": true,
-              "message_display": "expanded-md",
-              "sort": {
-                "column": "time",
-                "order": "desc"
-              }
-            }
-          }
-        ]
-      }
-    }
-  ],
-  "template_variables": [
-    {
-      "name": "namespace",
-      "default": "fitness-app",
-      "prefix": "kube_namespace",
-      "available_values": ["fitness-app", "fitness-staging", "argocd", "datadog"]
-    },
-    {
-      "name": "env",
-      "default": "production",
-      "prefix": "env",
-      "available_values": ["production", "staging"]
-    }
-  ],
+  "description": "Kubernetes cluster health, pods, containers, application metrics, logs, performance and reliability indicators.",
   "layout_type": "ordered",
   "notify_list": [],
-  "reflow_type": "fixed",
-  "tags": ["team:devops"]
+  "tags": ["team:devops"],
+  "widgets": [
+    {
+      "definition": {
+        "type": "note",
+        "content": "## 🏥 Kubernetes Cluster Health",
+        "background_color": "blue",
+        "font_size": "18",
+        "text_align": "left",
+        "show_tick": false
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "Nodes Ready",
+        "requests": [
+          {
+            "q": "sum:kubernetes_state.node.status{status:ready}",
+            "aggregator": "last"
+          }
+        ],
+        "precision": 0,
+        "autoscale": true,
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "Running Pods",
+        "requests": [
+          {
+            "q": "sum:kubernetes_state.pod.status_phase{phase:running}",
+            "aggregator": "last"
+          }
+        ],
+        "precision": 0,
+        "autoscale": true,
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "Pending Pods",
+        "requests": [
+          {
+            "q": "sum:kubernetes_state.pod.status_phase{phase:pending}",
+            "aggregator": "last"
+          }
+        ],
+        "precision": 0,
+        "autoscale": true,
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "## 📊 Node Resource Usage",
+        "background_color": "green",
+        "font_size": "18",
+        "text_align": "left",
+        "show_tick": false
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Node CPU Usage (%)",
+        "requests": [
+          {
+            "q": "avg:system.cpu.user{*} by {host}",
+            "display_type": "line",
+            "style": {
+              "palette": "dog_classic",
+              "line_type": "solid",
+              "line_width": "normal"
+            }
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Node Memory Usage",
+        "requests": [
+          {
+            "q": "avg:system.mem.used{*} by {host}",
+            "display_type": "area",
+            "style": {
+              "palette": "purple",
+              "line_type": "solid",
+              "line_width": "normal"
+            }
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "System Load (15 min avg)",
+        "requests": [
+          {
+            "q": "avg:system.load.15{*} by {host}",
+            "display_type": "line",
+            "style": {
+              "palette": "orange"
+            }
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "## 🚀 Pod & Container Metrics — fitness-app",
+        "background_color": "yellow",
+        "font_size": "18",
+        "text_align": "left",
+        "show_tick": false
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Pod CPU Usage — fitness-app",
+        "requests": [
+          {
+            "q": "sum:kubernetes.cpu.usage.total{kube_namespace:fitness-app} by {pod_name}",
+            "display_type": "line",
+            "style": {
+              "palette": "cool",
+              "line_type": "solid",
+              "line_width": "normal"
+            }
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Pod Memory Usage — fitness-app",
+        "requests": [
+          {
+            "q": "sum:kubernetes.memory.usage{kube_namespace:fitness-app} by {pod_name}",
+            "display_type": "area",
+            "style": {
+              "palette": "warm",
+              "line_type": "solid",
+              "line_width": "normal"
+            }
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Container Restarts — fitness-app",
+        "requests": [
+          {
+            "q": "sum:kubernetes_state.container.restarts{kube_namespace:fitness-app} by {pod_name}",
+            "display_type": "bars",
+            "style": {
+              "palette": "red"
+            }
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Network Bytes Received — fitness-app",
+        "requests": [
+          {
+            "q": "sum:kubernetes.network.rx_bytes{kube_namespace:fitness-app} by {pod_name}",
+            "display_type": "line",
+            "style": {
+              "palette": "classic"
+            }
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "## 🎯 Application & HPA Metrics",
+        "background_color": "pink",
+        "font_size": "18",
+        "text_align": "left",
+        "show_tick": false
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "HPA — Current vs Desired Replicas",
+        "requests": [
+          {
+            "q": "sum:kubernetes_state.hpa.current_replicas{kube_namespace:fitness-app}",
+            "display_type": "line",
+            "style": { "palette": "green" }
+          },
+          {
+            "q": "sum:kubernetes_state.hpa.desired_replicas{kube_namespace:fitness-app}",
+            "display_type": "line",
+            "style": { "palette": "orange" }
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Deployment Available Replicas",
+        "requests": [
+          {
+            "q": "sum:kubernetes_state.deployment.replicas_available{kube_namespace:fitness-app} by {deployment}",
+            "display_type": "bars",
+            "style": { "palette": "cool" }
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "toplist",
+        "title": "Top CPU Consuming Pods",
+        "requests": [
+          {
+            "q": "top(sum:kubernetes.cpu.usage.total{kube_namespace:fitness-app} by {pod_name}, 10, 'mean', 'desc')"
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "toplist",
+        "title": "Top Memory Consuming Pods",
+        "requests": [
+          {
+            "q": "top(sum:kubernetes.memory.usage{kube_namespace:fitness-app} by {pod_name}, 10, 'mean', 'desc')"
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "## 🔧 Performance & Reliability Indicators",
+        "background_color": "red",
+        "font_size": "18",
+        "text_align": "left",
+        "show_tick": false
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "CPU Throttling — fitness-app containers",
+        "requests": [
+          {
+            "q": "sum:kubernetes.cpu.cfs.throttled_periods{kube_namespace:fitness-app} by {container_name}",
+            "display_type": "bars",
+            "style": { "palette": "red" }
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Disk Usage",
+        "requests": [
+          {
+            "q": "avg:system.disk.in_use{*} by {host}",
+            "display_type": "area",
+            "style": { "palette": "warm" }
+          }
+        ],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "check_status",
+        "title": "Node Ready Status",
+        "check": "kubernetes_state.node.ready",
+        "grouping": "cluster",
+        "group_by": [],
+        "tags": ["*"],
+        "time": {}
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "## 📝 Live Logs — fitness-app",
+        "background_color": "gray",
+        "font_size": "18",
+        "text_align": "left",
+        "show_tick": false
+      }
+    },
+    {
+      "definition": {
+        "type": "log_stream",
+        "title": "Live Logs — fitness-app namespace",
+        "query": "kube_namespace:fitness-app",
+        "columns": ["host", "service", "status"],
+        "indexes": [],
+        "show_date_column": true,
+        "show_message_column": true,
+        "message_display": "expanded-md",
+        "sort": {
+          "column": "time",
+          "order": "desc"
+        },
+        "time": {}
+      }
+    }
+  ]
 }
