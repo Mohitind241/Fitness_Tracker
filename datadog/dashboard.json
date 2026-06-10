@@ -438,5 +438,5 @@
   "layout_type": "ordered",
   "notify_list": [],
   "reflow_type": "fixed",
-  "tags": ["env:production", "app:fitness-tracker", "team:devops"]
+  "tags": ["team:devops"]
 }
